@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Artigo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="index.html">Home</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div id="loginSection">
+            <button id="btnLogin">Login como Admin</button>
+            <form id="loginForm" style="display:none;">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="senha" placeholder="Senha" required>
+                <button type="submit">Entrar</button>
+            </form>
+            <p id="mensagem"></p>
+        </div>
+
+        <form id="formArtigo" style="display:none;">
+            <input type="text" id="titulo" placeholder="Título" required>
+            <input type="text" id="subtitulo" placeholder="Subtítulo" required>
+            <input type="text" id="cover" placeholder="URL da capa" required>
+            <textarea id="conteudo" placeholder="Conteúdo (HTML)" rows="10" required></textarea>
+            <button type="submit">Publicar</button>
+        </form>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Meu Blog</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { firebaseConfig } from './config.js';
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const btnLogin = document.getElementById("btnLogin");
+        const loginForm = document.getElementById("loginForm");
+        const formArtigo = document.getElementById("formArtigo");
+        const mensagem = document.getElementById("mensagem");
+
+        btnLogin.addEventListener("click", () => loginForm.style.display = "block");
+
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            const senha = document.getElementById("senha").value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+                const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+                if (userDoc.exists() && userDoc.data().role === "admin") {
+                    mensagem.textContent = "Bem-vindo, Admin!";
+                    mensagem.style.color = "#007bff";
+                    formArtigo.style.display = "block";
+                    loginForm.style.display = "none";
+                    btnLogin.style.display = "none";
+                } else {
+                    mensagem.textContent = "Você não tem permissão para criar artigos.";
+                    mensagem.style.color = "#ff4d4d";
+                    formArtigo.style.display = "none";
+                }
+            } catch (error) {
+                mensagem.textContent = "Erro no login: " + error.message;
+                mensagem.style.color = "#ff4d4d";
+            }
+        });
+
+        formArtigo.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const titulo = document.getElementById("titulo").value;
+            const subtitulo = document.getElementById("subtitulo").value;
+            const cover = document.getElementById("cover").value;
+            const conteudo = document.getElementById("conteudo").value;
+
+            await addDoc(collection(db, "artigos"), {
+                titulo,
+                subtitulo,
+                cover,
+                conteudo,
+                dataPublicacao: new Date().toISOString()
+            });
+
+            alert("Artigo publicado!");
+            formArtigo.reset();
+        });
+    </script>
+</body>
+
+</html>

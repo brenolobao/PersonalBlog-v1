@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Artigo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="create.html">Criar Artigo</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <a href="index.html" style="color: #007bff; text-decoration: none; margin-bottom: 20px; display: block;">←
+            Voltar</a>
+        <div id="artigo">
+            <p class="loading-indicator">Carregando artigo...</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Meu Blog</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { firebaseConfig } from './config.js';
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const artigoDiv = document.getElementById("artigo");
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+
+        async function carregarArtigo() {
+            if (!id) {
+                artigoDiv.innerHTML = "<p class='error-message'>ID do artigo não fornecido.</p>";
+                return;
+            }
+
+            const docRef = doc(db, "artigos", id);
+            const docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                artigoDiv.innerHTML = "<p class='error-message'>Artigo não encontrado.</p>";
+                return;
+            }
+
+            const data = docSnap.data();
+            artigoDiv.innerHTML = `
+                <h1>${data.titulo}</h1>
+                <h3>${data.subtitulo}</h3>
+                <img src="${data.cover}" alt="Capa">
+                <p>Publicado em: ${new Date(data.dataPublicacao).toLocaleDateString()}</p>
+                <div>${data.conteudo}</div>
+            `;
+        }
+
+        carregarArtigo();
+    </script>
+</body>
+
+</html>

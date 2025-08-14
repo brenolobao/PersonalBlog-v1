@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Profissional</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="create.html">Criar Artigo</a>
+        </nav>
+    </header>
+
+    <div class="container lista-artigos" id="listaArtigos">
+        <p class="loading-indicator">Carregando artigos...</p>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Meu Blog</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { firebaseConfig } from './config.js';
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const listaArtigos = document.getElementById("listaArtigos");
+
+        async function carregarArtigos() {
+            try {
+                const snapshot = await getDocs(collection(db, "artigos"));
+                listaArtigos.innerHTML = "";
+
+                if (snapshot.empty) {
+                    listaArtigos.innerHTML = "<p class='loading-indicator'>Nenhum artigo encontrado.</p>";
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const card = document.createElement("a");
+                    card.className = "card";
+                    card.href = `view.html?id=${doc.id}`;
+                    card.innerHTML = `
+                        <img src="${data.cover}" alt="Capa">
+                        <div class="card-content">
+                            <h2>${data.titulo}</h2>
+                            <h4>${data.subtitulo}</h4>
+                            <p>Publicado em: ${new Date(data.dataPublicacao).toLocaleDateString()}</p>
+                        </div>
+                    `;
+                    listaArtigos.appendChild(card);
+                });
+            } catch (error) {
+                listaArtigos.innerHTML = `<p class='error-message'>Erro ao carregar os artigos.</p>`;
+                console.error("Erro ao carregar os artigos: ", error);
+            }
+        }
+
+        carregarArtigos();
+    </script>
+</body>
+
+</html>
