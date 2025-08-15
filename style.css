@@ -151,7 +151,8 @@ header nav a:hover {
     border-radius: 8px;
     margin-bottom: 20px;
 }
-#artigo p{
+
+#artigo p {
     text-align: justify;
 }
 
@@ -231,6 +232,24 @@ button:hover {
     color: #c62828;
 }
 
+#loginSection {
+    display: grid;
+    place-items: center;
+}
+
+#loginForm {
+    width: 250px;
+    text-align: center;
+}
+
+#loginForm label {
+    font-size: 1.5em;
+}
+
+#loginForm button {
+    width: 100%;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     header nav {
@@ -246,5 +265,3 @@ button:hover {
         font-size: 2em;
     }
 }
-
-
