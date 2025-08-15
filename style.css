@@ -151,6 +151,9 @@ header nav a:hover {
     border-radius: 8px;
     margin-bottom: 20px;
 }
+#artigo p{
+    text-align: justify;
+}
 
 #artigo p,
 #artigo div {
@@ -244,3 +247,4 @@ button:hover {
         font-size: 2em;
     }
 }
+
