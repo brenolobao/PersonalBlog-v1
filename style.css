@@ -205,7 +205,6 @@ button:hover {
     padding: 10px;
     margin-bottom: 16px;
     border-radius: 4px;
-    border: 1px solid;
 }
 
 #mensagem.success {
@@ -247,4 +246,5 @@ button:hover {
         font-size: 2em;
     }
 }
+
 
