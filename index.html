@@ -26,9 +26,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         import { firebaseConfig } from './config.js';
-        
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -36,7 +36,10 @@
 
         async function carregarArtigos() {
             try {
-                const snapshot = await getDocs(collection(db, "artigos"));
+                // Modificação para ordenar os artigos do mais recente para o mais antigo
+                const q = query(collection(db, "artigos"), orderBy("dataPublicacao", "desc"));
+                const snapshot = await getDocs(q);
+
                 listaArtigos.innerHTML = "";
 
                 if (snapshot.empty) {
