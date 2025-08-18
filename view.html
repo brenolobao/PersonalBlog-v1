@@ -6,12 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualizar Artigo</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+    </style>
 </head>
 
 <body>
+    <!-- Menu integrado ao navbar -->
     <header>
         <nav>
             <a href="index.html">B.Log</a>
+            <div class="nav-menu-container">
+                <button class="hamburger-btn" id="hamburgerBtn">
+                    <span>Artigos</span>
+                    <span>▼</span>
+                </button>
+                <!-- Dropdown menu -->
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="menu-header">
+                        <h3>Todos os Artigos</h3>
+                    </div>
+                    <div class="menu-content" id="menuContent">
+                        <div class="loading-menu">Carregando artigos...</div>
+                    </div>
+                </div>
+            </div>
         </nav>
     </header>
 
@@ -29,43 +47,141 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         import { firebaseConfig } from './config.js';
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         const artigoDiv = document.getElementById("artigo");
+        const menuContent = document.getElementById("menuContent");
+        const hamburgerBtn = document.getElementById("hamburgerBtn");
+        const dropdownMenu = document.getElementById("dropdownMenu");
+
         const params = new URLSearchParams(window.location.search);
-        const id = params.get("id");
+        const currentArticleId = params.get("id");
+
+        // Funções para controlar o menu dropdown
+        function toggleMenu() {
+            dropdownMenu.classList.toggle('active');
+        }
+
+        function closeMenu() {
+            dropdownMenu.classList.remove('active');
+        }
+
+        // Event listeners para o menu
+        hamburgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu();
+        });
+
+        // Fechar menu ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!dropdownMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+                closeMenu();
+            }
+        });
+
+        // Fechar menu com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMenu();
+            }
+        });
 
         async function carregarArtigo() {
-            if (!id) {
+            if (!currentArticleId) {
                 artigoDiv.innerHTML = "<p class='error-message'>ID do artigo não fornecido.</p>";
                 return;
             }
 
-            const docRef = doc(db, "artigos", id);
-            const docSnap = await getDoc(docRef);
+            try {
+                const docRef = doc(db, "artigos", currentArticleId);
+                const docSnap = await getDoc(docRef);
 
-            if (!docSnap.exists()) {
-                artigoDiv.innerHTML = "<p class='error-message'>Artigo não encontrado.</p>";
-                return;
+                if (!docSnap.exists()) {
+                    artigoDiv.innerHTML = "<p class='error-message'>Artigo não encontrado.</p>";
+                    return;
+                }
+
+                const data = docSnap.data();
+                artigoDiv.innerHTML = `
+                    <h1>${data.titulo}</h1>
+                    <h3>${data.subtitulo}</h3>
+                    <img src="${data.cover}" alt="Capa">
+                    <p>Publicado em: ${new Date(data.dataPublicacao).toLocaleDateString()}</p>
+                    <div>${data.conteudo}</div>
+                `;
+            } catch (error) {
+                artigoDiv.innerHTML = "<p class='error-message'>Erro ao carregar o artigo.</p>";
+                console.error("Erro ao carregar artigo:", error);
             }
-
-            const data = docSnap.data();
-            artigoDiv.innerHTML = `
-                <h1>${data.titulo}</h1>
-                <h3>${data.subtitulo}</h3>
-                <img src="${data.cover}" alt="Capa">
-                <p>Publicado em: ${new Date(data.dataPublicacao).toLocaleDateString()}</p>
-                <div>${data.conteudo}</div>
-            `;
         }
 
+        async function carregarMenuArtigos() {
+            try {
+                const q = query(collection(db, "artigos"), orderBy("dataPublicacao", "desc"));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    menuContent.innerHTML = "<div class='loading-menu'>Nenhum artigo encontrado.</div>";
+                    return;
+                }
+
+                // Organizar artigos por ano
+                const artigosPorAno = {};
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const ano = new Date(data.dataPublicacao).getFullYear();
+
+                    if (!artigosPorAno[ano]) {
+                        artigosPorAno[ano] = [];
+                    }
+
+                    artigosPorAno[ano].push({
+                        id: doc.id,
+                        ...data
+                    });
+                });
+
+                // Gerar HTML do menu
+                let menuHTML = '';
+                const anosOrdenados = Object.keys(artigosPorAno).sort((a, b) => b - a);
+
+                anosOrdenados.forEach(ano => {
+                    menuHTML += `
+                        <div class="year-section">
+                            <div class="year-title">${ano}</div>
+                    `;
+
+                    artigosPorAno[ano].forEach(artigo => {
+                        const isCurrentArticle = artigo.id === currentArticleId;
+                        const currentClass = isCurrentArticle ? 'current-article' : '';
+
+                        menuHTML += `
+                            <a href="view.html?id=${artigo.id}" class="article-item ${currentClass}">
+                                <div class="article-title">${artigo.titulo}</div>
+                                <div class="article-date">${new Date(artigo.dataPublicacao).toLocaleDateString()}</div>
+                            </a>
+                        `;
+                    });
+
+                    menuHTML += `</div>`;
+                });
+
+                menuContent.innerHTML = menuHTML;
+            } catch (error) {
+                menuContent.innerHTML = "<div class='loading-menu'>Erro ao carregar artigos.</div>";
+                console.error("Erro ao carregar menu:", error);
+            }
+        }
+
+        // Carregar conteúdo
         carregarArtigo();
+        carregarMenuArtigos();
     </script>
 </body>
 
 </html>
-
