@@ -4,46 +4,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizar Artigo</title>
+    <title>Visualizar Artigo - B.Log</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-    </style>
+    <link rel="icon" href="favicon.png" type="image/png">
 </head>
 
 <body>
-    <!-- Menu integrado ao navbar -->
     <header>
         <nav>
-            <a href="index.html">B.Log</a>
-            <div class="nav-menu-container">
-                <button class="hamburger-btn" id="hamburgerBtn">
-                    <span>Artigos</span>
-                    <span>▼</span>
-                </button>
-                <!-- Dropdown menu -->
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <div class="menu-header">
-                        <h3>Todos os Artigos</h3>
+            <div class="nav-content">
+                <a href="index.html" class="logo">B.Log</a>
+                <div class="nav-controls">
+                    <div class="nav-menu-container">
+                        <button class="hamburger-btn" id="hamburgerBtn">
+                            <span>Artigos</span>
+                            <span>▼</span>
+                        </button>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <div class="menu-header">
+                                <h3>Todos os Artigos</h3>
+                            </div>
+                            <div class="menu-content" id="menuContent">
+                                <div class="loading-menu">Carregando artigos...</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="menu-content" id="menuContent">
-                        <div class="loading-menu">Carregando artigos...</div>
-                    </div>
+                    <button class="theme-toggle" id="themeToggle">🌙</button>
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="container">
-        <a href="index.html" style="color: #007bff; text-decoration: none; margin-bottom: 20px; display: block;">←
-            Voltar</a>
-        <div id="artigo">
-            <p class="loading-indicator">Carregando artigo...</p>
+    <main>
+        <div class="container">
+            <a href="index.html" class="back-link">
+                <span>←</span>
+                <span>Voltar</span>
+            </a>
+            <div id="artigo">
+                <div class="loading-article">
+                    <div class="loading-title-large"></div>
+                    <div class="loading-subtitle-large"></div>
+                    <div class="loading-image-large"></div>
+                    <div class="loading-text"></div>
+                    <div class="loading-text"></div>
+                    <div class="loading-text"></div>
+                </div>
+            </div>
         </div>
-    </div>
+    </main>
 
-    <div class="footer">
-        <p>&copy; 2025 Meu Blog</p>
-    </div>
+    <footer>
+        <div class="footer-content">
+            <div class="social-links">
+                <a href="#" aria-label="GitHub">GitHub</a>
+                <a href="#" aria-label="LinkedIn">LinkedIn</a>
+                <a href="#" aria-label="Instagram">Instagram</a>
+            </div>
+            <p class="copyright">&copy; 2025 B.Log - Todos os direitos reservados</p>
+        </div>
+    </footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -57,11 +77,33 @@
         const menuContent = document.getElementById("menuContent");
         const hamburgerBtn = document.getElementById("hamburgerBtn");
         const dropdownMenu = document.getElementById("dropdownMenu");
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
 
         const params = new URLSearchParams(window.location.search);
         const currentArticleId = params.get("id");
 
-        // Funções para controlar o menu dropdown
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+
+        if (currentTheme === 'light') {
+            body.setAttribute('data-theme', 'light');
+            themeToggle.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = !body.hasAttribute('data-theme') || body.getAttribute('data-theme') === 'dark';
+
+            if (isDark) {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
         function toggleMenu() {
             dropdownMenu.classList.toggle('active');
         }
@@ -70,20 +112,17 @@
             dropdownMenu.classList.remove('active');
         }
 
-        // Event listeners para o menu
         hamburgerBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleMenu();
         });
 
-        // Fechar menu ao clicar fora
         document.addEventListener('click', (e) => {
             if (!dropdownMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
                 closeMenu();
             }
         });
 
-        // Fechar menu com ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeMenu();
@@ -92,7 +131,7 @@
 
         async function carregarArtigo() {
             if (!currentArticleId) {
-                artigoDiv.innerHTML = "<p class='error-message'>ID do artigo não fornecido.</p>";
+                artigoDiv.innerHTML = "<div class='error-state'><h3>ID do artigo não fornecido</h3><p>Verifique o link e tente novamente</p></div>";
                 return;
             }
 
@@ -101,20 +140,27 @@
                 const docSnap = await getDoc(docRef);
 
                 if (!docSnap.exists()) {
-                    artigoDiv.innerHTML = "<p class='error-message'>Artigo não encontrado.</p>";
+                    artigoDiv.innerHTML = "<div class='error-state'><h3>Artigo não encontrado</h3><p>O artigo que você procura pode ter sido removido</p></div>";
                     return;
                 }
 
                 const data = docSnap.data();
+                const date = new Date(data.dataPublicacao);
+                const formattedDate = date.toLocaleDateString('pt-BR');
+
+                document.title = `${data.titulo} - B.Log`;
+
                 artigoDiv.innerHTML = `
                     <h1>${data.titulo}</h1>
                     <h3>${data.subtitulo}</h3>
-                    <img src="${data.cover}" alt="Capa">
-                    <p>Publicado em: ${new Date(data.dataPublicacao).toLocaleDateString()}</p>
-                    <div>${data.conteudo}</div>
+                    <div class="article-meta">
+                        <span class="publish-date">📅 Publicado em ${formattedDate}</span>
+                    </div>
+                    <img src="${data.cover}" alt="${data.titulo}" loading="lazy">
+                    <div class="article-content">${data.conteudo}</div>
                 `;
             } catch (error) {
-                artigoDiv.innerHTML = "<p class='error-message'>Erro ao carregar o artigo.</p>";
+                artigoDiv.innerHTML = "<div class='error-state'><h3>Erro ao carregar o artigo</h3><p>Tente recarregar a página</p></div>";
                 console.error("Erro ao carregar artigo:", error);
             }
         }
@@ -129,7 +175,6 @@
                     return;
                 }
 
-                // Organizar artigos por ano
                 const artigosPorAno = {};
 
                 snapshot.forEach(doc => {
@@ -146,7 +191,6 @@
                     });
                 });
 
-                // Gerar HTML do menu
                 let menuHTML = '';
                 const anosOrdenados = Object.keys(artigosPorAno).sort((a, b) => b - a);
 
@@ -163,7 +207,7 @@
                         menuHTML += `
                             <a href="view.html?id=${artigo.id}" class="article-item ${currentClass}">
                                 <div class="article-title">${artigo.titulo}</div>
-                                <div class="article-date">${new Date(artigo.dataPublicacao).toLocaleDateString()}</div>
+                                <div class="article-date">${new Date(artigo.dataPublicacao).toLocaleDateString('pt-BR')}</div>
                             </a>
                         `;
                     });
@@ -178,7 +222,6 @@
             }
         }
 
-        // Carregar conteúdo
         carregarArtigo();
         carregarMenuArtigos();
     </script>
