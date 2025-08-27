@@ -518,7 +518,7 @@ footer {
 }
 
 #artigo {
-    max-width: 800px;
+    max-width: 100%;
     margin: 2rem auto;
     background: var(--card-bg);
     padding: 3rem;
@@ -812,7 +812,6 @@ footer {
     }
 
     #artigo {
-        margin: 1rem;
         padding: 2rem 1.5rem;
     }
 
