@@ -29,8 +29,3 @@ Bem-vindo ao **B.Log**, um blog pessoal para compartilhar ideias, conhecimento e
 - O menu de navegação permite filtrar artigos por ano.
 - O layout é adaptado para dispositivos móveis.
 
-## Como rodar
-1. Clone o repositório ou abra pelo GitHub Pages na descrição.
-2. Configure o Firebase no arquivo `config.js`.
-3. Abra o `index.html` em seu navegador.
-
